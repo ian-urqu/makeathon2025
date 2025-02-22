@@ -1,8 +1,10 @@
 from turtle import distance
 import cv2
 import numpy as np
+import serial
+import time
 
-know_distance = 71.12  # (que) What is this?
+know_distance = 66  # (que) What is this?
 know_width = 14.3
 
 # Colors
@@ -14,6 +16,11 @@ cap = cv2.VideoCapture(0)
 
 face_detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 
+def send_data_to_arduino(angle, distance):
+    # Format the data as "angle,distance" (e.g., "45,10")
+    data = f"{angle},{distance}\n"
+    arduino.write(data.encode())  # Send the data to Arduino
+    print(f"Sent: {data.strip()}")
 
 # focal length finder function
 def focal_length(
@@ -59,14 +66,15 @@ def face_data(image):
 
 
 # reading reference image from directory
-ref_image = cv2.imread("Ref_image2.jpg")
+ref_image = cv2.imread("Refimg3.jpg")
 
 ref_image_face_width, _ = face_data(ref_image)
 focal_length_found = focal_length(know_distance, know_width, ref_image_face_width)
 print(focal_length_found)
 # cv2.imshow("ref_image", ref_image)
 
-
+arduino = serial.Serial(port="COM6", baudrate=9600, timeout=1)
+time.sleep(2)  # Wait for the Arduino to initialize
 while True:
     ret, frame = cap.read()
 
@@ -75,12 +83,16 @@ while True:
     if face_width_in_frame > 0:
         # Drwaing Text on the screen
         dist = distance_finder(focal_length_found, know_width, face_width_in_frame)
+        rad = dist/np.cos(np.radians(angle))
         cv2.putText(
-            frame, f"Distance = {round(dist,2)} CM", (50, 50), fonts, 1, (RED), 2
+            frame, f"Rad = {round(rad,2)} CM", (50, 50), fonts, 1, (RED), 2
         )
         cv2.putText(
             frame, f"Angle = {round(angle,2)} degrees", (50, 100), fonts, 1, (GREEN), 2
         )
+        send_data_to_arduino(angle, rad)
+
+
 
     if dist < 40:  # (que) why 40?
         cv2.putText(

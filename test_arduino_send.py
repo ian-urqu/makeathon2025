@@ -2,7 +2,7 @@ import serial
 import time
 
 # Set up the serial connection (adjust the port and baud rate as needed)
-arduino = serial.Serial(port="COM3", baudrate=9600, timeout=1)
+arduino = serial.Serial(port="COM6", baudrate=9600, timeout=1)
 time.sleep(2)  # Wait for the Arduino to initialize
 
 
